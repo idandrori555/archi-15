@@ -16,3 +16,5 @@ ${BIN_DIR}/.exist:
 
 clean:
 	rm  -f ${BIN_DIR}/myfs
+
+.PHONY: all clean
