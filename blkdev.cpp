@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-BlockDeviceSimulator::BlockDeviceSimulator(std::string fname)
+BlockDeviceSimulator::BlockDeviceSimulator(const std::string &fname)
 {
 
   // if file doesn't exist, create it

@@ -15,6 +15,6 @@ ${BIN_DIR}/.exist:
 	touch ${BIN_DIR}/.exist
 
 clean:
-	rm  -f ${BIN_DIR}/myfs
+	rm  -rf ${BIN_DIR}
 
 .PHONY: all clean
