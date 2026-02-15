@@ -165,7 +165,7 @@ int main(int argc, char **argv)
         std::cout << "unknown command: " << cmd[0] << std::endl;
       }
     }
-    catch (std::runtime_error &e)
+    catch (const std::runtime_error &e)
     {
       std::cout << e.what() << std::endl;
     }
