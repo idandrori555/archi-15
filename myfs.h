@@ -1,105 +1,54 @@
-#ifndef __MYFS_H__
-#define __MYFS_H__
+#pragma once
 
 #include "blkdev.h"
 #include <memory>
 #include <stdint.h>
+#include <string.h>
 #include <vector>
 
 class MyFs
 {
 public:
   MyFs(BlockDeviceSimulator *blkdevsim_);
+  ~MyFs(void) = default;
 
-  /**
-   * dir_list_entry struct
-   * This struct is used by list_dir method to return directory entry
-   * information.
-   */
   struct dir_list_entry
   {
-    /**
-     * The directory entry name
-     */
     std::string name;
-
-    /**
-     * whether the entry is a file or a directory
-     */
     bool is_dir;
-
-    /**
-     * File size
-     */
     int file_size;
   };
   typedef std::vector<struct dir_list_entry> dir_list;
 
-  /**
-   * format method
-   * This function discards the current content in the blockdevice and
-   * create a fresh new MYFS instance in the blockdevice.
-   */
-  void format();
-
-  /**
-   * create_file method
-   * Creates a new file in the required path.
-   * @param path_str the file path (e.g. "/newfile")
-   * @param directory boolean indicating whether this is a file or directory
-   */
+  void format(void);
   void create_file(const std::string &path_str, bool directory);
-
-  /**
-   * get_content method
-   * Returns the whole content of the file indicated by path_str param.
-   * Note: this method assumes path_str refers to a file and not a
-   * directory.
-   * @param path_str the file path (e.g. "/somefile")
-   * @return the content of the file
-   */
   std::string get_content(const std::string &path_str);
-
-  /**
-   * set_content method
-   * Sets the whole content of the file indicated by path_str param.
-   * Note: this method assumes path_str refers to a file and not a
-   * directory.
-   * @param path_str the file path (e.g. "/somefile")
-   * @param content the file content string
-   */
   void set_content(const std::string &path_str, const std::string &content);
-
-  /**
-   * list_dir method
-   * Returns a list of a files in a directory.
-   * Note: this method assumes path_str refers to a directory and not a
-   * file.
-   * @param path_str the file path (e.g. "/somedir")
-   * @return a vector of dir_list_entry structures, one for each file in
-   *	the directory.
-   */
   dir_list list_dir(const std::string &path_str);
 
 private:
-  /**
-   * This struct represents the first bytes of a myfs filesystem.
-   * It holds some magic characters and a number indicating the version.
-   * Upon class construction, the magic and the header are tested - if
-   * they both exist than the file is assumed to contain a valid myfs
-   * instance. Otherwise, the blockdevice is formated and a new instance is
-   * created.
-   */
+  inline constexpr static int FILE_NAME_MAX_LENGTH = 10;
+  inline constexpr static int MAX_FILES = 64;      // Max number of files
+  inline constexpr static int FILE_MAX_SIZE = 256; // block size (changable)
+  inline constexpr static const char *MYFS_MAGIC = "MYFS";
+  inline constexpr static int CURR_VERSION = 3;
+
   struct myfs_header
   {
     char magic[4];
     uint8_t version;
   };
 
+  struct FileEntry
+  {
+    char name[FILE_NAME_MAX_LENGTH + 1];
+    int size;
+    int start_address; // address on the block device
+    bool is_used;
+  };
+
+  inline constexpr static int METADATA_OFFSET = sizeof(struct myfs_header);                          // Start of metadata table (after header)
+  inline constexpr static int DATA_START_OFFSET = METADATA_OFFSET + (sizeof(FileEntry) * MAX_FILES); // After ENTTIRE! metadata table
+
   BlockDeviceSimulator *blkdevsim;
-
-  static const uint8_t CURR_VERSION = 0x03;
-  static const char *MYFS_MAGIC;
 };
-
-#endif // __MYFS_H__
