@@ -20,11 +20,12 @@ public:
   };
   typedef std::vector<struct dir_list_entry> dir_list;
 
-  void format(void);
-  void create_file(const std::string &path_str, bool directory);
-  std::string get_content(const std::string &path_str);
-  void set_content(const std::string &path_str, const std::string &content);
-  dir_list list_dir(const std::string &path_str);
+  auto format(void) -> void;
+  auto fileExists(const std::string &path_str) -> bool;
+  auto create_file(const std::string &path_str, bool directory) -> void;
+  auto get_content(const std::string &path_str) -> std::string;
+  auto set_content(const std::string &path_str, const std::string &content) -> void;
+  auto list_dir(const std::string &path_str) -> dir_list;
 
 private:
   inline constexpr static int FILE_NAME_MAX_LENGTH = 10;

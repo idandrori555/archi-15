@@ -1,4 +1,4 @@
-// USE C++23
+// <!> USE C++23 <!>
 
 #include "myfs.h"
 #include <iostream>
@@ -44,16 +44,33 @@ void MyFs::format(void)
   }
 }
 
+auto MyFs::fileExists(const std::string &path_str) -> bool
+{
+  FileEntry entry{};
+
+  for (size_t i{}; i < MAX_FILES; i++)
+  {
+    blkdevsim->read(METADATA_OFFSET + (i * sizeof(FileEntry)), sizeof(FileEntry), (char *)&entry);
+    if (!entry.is_used)
+      continue;
+
+    if (path_str == entry.name)
+      return true;
+  }
+
+  return false;
+}
+
 /**
  * Add a new file to the metadata table.
  */
 auto MyFs::create_file(const std::string &path_str, bool directory) -> void
 {
   if (directory)
-  {
     throw std::runtime_error("Directories not implemented");
-    return;
-  }
+
+  if (fileExists(path_str))
+    throw std::runtime_error("A file already exists with that name!");
 
   // Look for free slot in metadata table to insert our new file into.
   for (size_t i{}; i < MAX_FILES; i++)
@@ -65,6 +82,7 @@ auto MyFs::create_file(const std::string &path_str, bool directory) -> void
     {
       memset(&entry, 0, sizeof(entry));
       strncpy(entry.name, path_str.c_str(), FILE_NAME_MAX_LENGTH); // Limit name
+      entry.name[FILE_NAME_MAX_LENGTH] = '\0';                     // ensure null term
       entry.is_used = true;
       entry.size = 0;
 
@@ -76,6 +94,7 @@ auto MyFs::create_file(const std::string &path_str, bool directory) -> void
       return;
     }
   }
+
   throw std::runtime_error("File system full: Maximum file count reached");
 }
 
@@ -100,6 +119,7 @@ auto MyFs::get_content(const std::string &path_str) -> std::string
       return std::string(buffer.begin(), buffer.end());
     }
   }
+
   throw std::runtime_error("File not found");
 }
 
@@ -109,9 +129,7 @@ auto MyFs::get_content(const std::string &path_str) -> std::string
 auto MyFs::set_content(const std::string &path_str, const std::string &content) -> void
 {
   if (FILE_MAX_SIZE < content.length())
-  {
     throw std::runtime_error("File content too large for the allocated block");
-  }
 
   for (size_t i{}; i < MAX_FILES; i++)
   {
@@ -130,6 +148,7 @@ auto MyFs::set_content(const std::string &path_str, const std::string &content) 
       return;
     }
   }
+
   throw std::runtime_error("File not found");
 }
 
@@ -153,5 +172,6 @@ auto MyFs::list_dir(const std::string &path_str) -> dir_list
       ans.push_back(de);
     }
   }
+
   return ans;
 }
