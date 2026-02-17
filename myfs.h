@@ -1,9 +1,9 @@
 #pragma once
 
 #include "blkdev.h"
-#include <memory>
 #include <stdint.h>
 #include <string.h>
+#include <string>
 #include <vector>
 
 class MyFs
@@ -28,11 +28,17 @@ public:
   auto list_dir(const std::string &path_str) -> dir_list;
 
 private:
-  inline constexpr static int FILE_NAME_MAX_LENGTH = 10;
-  inline constexpr static int MAX_FILES = 64;      // Max number of files
-  inline constexpr static int FILE_MAX_SIZE = 256; // block size (changable)
+  inline constexpr static int BLOCK_SIZE = 256;
+  inline constexpr static int TOTAL_BLOCKS = 16;
+  inline constexpr static int DATA_PER_BLOCK = BLOCK_SIZE - 1; // 1 byte for `used` flag
+  inline constexpr static int MAX_CONTENT_BLOCKS = 8;
+  inline constexpr static int FILE_NAME_MAX_LEN = 10;
   inline constexpr static const char *MYFS_MAGIC = "MYFS";
-  inline constexpr static int CURR_VERSION = 3;
+  inline constexpr static int CURR_VERSION = 5;
+
+  inline constexpr static uint8_t BLOCK_TYPE_INODE = 1;
+  inline constexpr static uint8_t BLOCK_TYPE_CONTENT = 2;
+  inline constexpr static uint8_t BLOCK_TYPE_UNUSED = 0;
 
   struct myfs_header
   {
@@ -40,16 +46,27 @@ private:
     uint8_t version;
   };
 
-  struct FileEntry
+  struct InodeBlock
   {
-    char name[FILE_NAME_MAX_LENGTH + 1];
+    uint8_t type; // BLOCK_TYPE_INODE
+    char name[FILE_NAME_MAX_LEN + 1];
     int size;
-    int start_address; // address on the block device
-    bool is_used;
+    int num_blocks;
+    int blocks[MAX_CONTENT_BLOCKS];
   };
 
-  inline constexpr static int METADATA_OFFSET = sizeof(struct myfs_header);                          // Start of metadata table (after header)
-  inline constexpr static int DATA_START_OFFSET = METADATA_OFFSET + (sizeof(FileEntry) * MAX_FILES); // After ENTTIRE! metadata table
+  struct ContentBlock
+  {
+    uint8_t type; // BLOCK_TYPE_CONTENT
+    char data[DATA_PER_BLOCK];
+  };
+
+  // This is constexpr so i put it in h file.
+  constexpr auto blockAddr(int i) const -> int
+  {
+    return i * BLOCK_SIZE;
+  }
+  auto findFreeBlock() -> int;
 
   BlockDeviceSimulator *blkdevsim;
 };
